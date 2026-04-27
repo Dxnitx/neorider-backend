@@ -1,26 +1,31 @@
 from fastapi import FastAPI
-from app.core.database import Base, engine
-from app.models.device import Device
-from app.models.ride import Ride
-from app.models.telemetry import Telemetry
-from app.models.alert import Alert
-from app.models.summary import RideSummary
-from app.routers import device, ride, telemetry
-    
-Base.metadata.create_all(bind=engine)
+from fastapi.middleware.cors import CORSMiddleware
+from app.config import get_settings
+from app.routers import sensor, prediction, rides, health
 
-app = FastAPI(title="NeoRider Backend")
+app = FastAPI(
+    title="NeoRider Backend",
+    description="IoT-based intelligent motorcycle rider safety and training system",
+    version="1.0.0",
+)
 
-app.include_router(device.router)
-app.include_router(ride.router)
-app.include_router(telemetry.router)
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.get("/")
-def root():
-    return {"message": "NeoRider backend is running"}
+# Include routers
+app.include_router(sensor.router, prefix="/sensor", tags=["sensor"])
+app.include_router(prediction.router, prefix="/predict", tags=["prediction"])
+app.include_router(rides.router, prefix="/rides", tags=["rides"])
+app.include_router(health.router, tags=["health"])
 
-from app.core.firebase import db
-
-db.collection("test").add({
-    "message": "NeoRider Firebase working!"
-})
+@app.on_event("startup")
+async def startup_event():
+    # Initialize Firebase on startup
+    from app.firebase import initialize_firebase
+    initialize_firebase()

@@ -1,15 +1,23 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
-from sqlalchemy.sql import func
-from app.core.database import Base
+from pydantic import BaseModel
+from typing import Literal, Optional
+from datetime import datetime
 
+class RideSummary(BaseModel):
+    """Summary statistics for a ride."""
+    safe_count: int = 0
+    risky_count: int = 0
+    accident_alerts: int = 0
 
-class Ride(Base):
-    __tablename__ = "rides"
+class RideCreate(BaseModel):
+    """Model for creating a new ride."""
+    rider_name: str
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False)
-    device_id = Column(Integer, ForeignKey("devices.id"), nullable=False)
-    start_time = Column(DateTime(timezone=True), server_default=func.now())
-    end_time = Column(DateTime(timezone=True), nullable=True)
-    status = Column(String(50), default="active")
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+class RideResponse(BaseModel):
+    """Model for ride response."""
+    id: str
+    rider_name: str
+    start_time: str  # ISO 8601 string
+    end_time: Optional[str] = None  # ISO 8601 string or null
+    status: Literal["active", "completed"]
+    total_readings: int = 0
+    summary: RideSummary
