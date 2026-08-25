@@ -1,22 +1,31 @@
 from pydantic import BaseModel
-from typing import Literal
 from datetime import datetime
+from typing import Literal
+
 
 class SensorReading(BaseModel):
-    """Model for sensor reading data."""
     ride_id: str
     device: Literal["helmet", "chest"]
-    timestamp: str  # ISO 8601 string
+
+    # Firestore timestamp
+    timestamp: datetime
+
     accel_x: float
     accel_y: float
     accel_z: float
+
     gyro_x: float
     gyro_y: float
     gyro_z: float
+
+    mag_x: float = 0.0
+    mag_y: float = 0.0
+    mag_z: float = 0.0
+
     pitch: float
     roll: float
     yaw: float
 
+
 class SensorReadingResponse(SensorReading):
-    """Response model for sensor reading with ID."""
     id: str

@@ -127,15 +127,14 @@ Generate behavior prediction from a 20-sensor reading window.
   "prediction": "safe_riding",
   "confidence": 0.91,
   "timestamp": "ISO 8601 string",
-  "model_used": "placeholder_v0"
+  "model_used": "LightGBM_tuned_real_dataset"
 }
 ```
 
 **Prediction Classes:**
 - `safe_riding`
-- `unstable_movement`
-- `sudden_motion`
-- `risky_behavior`
+- `moderate_risk`
+- `high_risk`
 - `possible_accident`
 
 #### GET /predict/history/{ride_id}
@@ -152,7 +151,7 @@ Get prediction history for a ride.
     "prediction": "safe_riding",
     "confidence": 0.91,
     "timestamp": "ISO 8601 string",
-    "model_used": "placeholder_v0"
+    "model_used": "LightGBM_tuned_real_dataset"
   }
 ]
 ```
@@ -317,22 +316,21 @@ List all ride sessions.
 - **Input:** List of 20 sensor reading dictionaries
 - **Process:**
   1. Extract 9 sensor channels from each reading
-  2. Compute mean, standard deviation, max absolute value per channel
-  3. Return flattened dictionary of 27 features
+  2. Compute the 156 statistical features used during model training
+  3. Return flattened dictionary aligned with the saved scaler feature names
 - **Complexity:** O(n) where n=20 (constant time)
-- **Library:** Python statistics module
+- **Libraries:** NumPy, Pandas
 
 #### Prediction Classification
-- **Current:** Placeholder function (O(1))
-- **Future:** XGBoost/scikit-learn model prediction
-- **Input:** 27-dimensional feature vector
-- **Output:** Class label + confidence score
+- **Current:** LightGBM inference using saved model artifacts
+- **Input:** 156-dimensional feature vector
+- **Output:** Risk label + confidence score
 
 #### Summary Calculation
 - **Input:** Collection of predictions for a ride
 - **Process:** Count occurrences of each prediction class
 - **Complexity:** O(m) where m=number of predictions
-- **Categories:** safe_riding, risky_behaviors, accident_alerts
+- **Categories:** safe_riding, moderate_risk, high_risk, possible_accident
 
 ## Architecture
 

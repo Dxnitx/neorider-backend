@@ -11,10 +11,10 @@ class SensorService:
     def create_reading(self, reading: SensorReading) -> SensorReadingResponse:
         """Save a sensor reading to Firestore."""
         doc_ref = self.db.collection('sensor_readings').document()
-        data = reading.dict()
-        data['timestamp'] = firestore.SERVER_TIMESTAMP  # Use server timestamp
+        data = reading.model_dump()
+        data['server_timestamp'] = firestore.SERVER_TIMESTAMP
         doc_ref.set(data)
-        return SensorReadingResponse(id=doc_ref.id, **reading.dict())
+        return SensorReadingResponse(id=doc_ref.id, **reading.model_dump())
 
     def get_readings_by_ride(self, ride_id: str) -> List[SensorReading]:
         """Get all sensor readings for a ride."""
@@ -22,6 +22,5 @@ class SensorService:
         readings = []
         for doc in docs:
             data = doc.to_dict()
-            data['id'] = doc.id
             readings.append(SensorReading(**data))
         return readings

@@ -6,9 +6,11 @@ pydantic-settings==2.1.0
 python-dotenv==1.0.0
 pytest==7.4.3
 httpx==0.25.2
-uvicorn==0.42.0
-joblib
-pandas
-numpy
-scikit-learn
-xgboost
+joblib>=1.5,<2
+pandas>=2.2,<3.1
+numpy>=2.0,<2.5
+scipy>=1.14,<1.18
+scikit-learn>=1.6,<1.7
+xgboost>=3.0,<4
+lightgbm>=4.6,<5
+pyserial>=3.5,<4

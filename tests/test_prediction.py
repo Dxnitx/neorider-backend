@@ -17,8 +17,8 @@ def mock_firebase():
         yield mock_service_instance
 
 def test_create_prediction_valid(mock_firebase):
-    """Test POST /predict with valid 20-reading window."""
-    sensor_readings = [
+    """Test POST /predict with a valid 20-step dual-IMU window."""
+    helmet_readings = [
         SensorReading(
             ride_id="test_ride_1",
             device="helmet",
@@ -34,6 +34,15 @@ def test_create_prediction_valid(mock_firebase):
             yaw=30.0 + i * 0.5
         ) for i in range(20)
     ]
+    chest_readings = [
+        reading.model_copy(update={"device": "chest"})
+        for reading in helmet_readings
+    ]
+    sensor_readings = [
+        reading
+        for pair in zip(helmet_readings, chest_readings)
+        for reading in pair
+    ]
     
     request = PredictionRequest(
         ride_id="test_ride_1",
@@ -45,18 +54,18 @@ def test_create_prediction_valid(mock_firebase):
         "prediction": "safe_riding",
         "confidence": 0.91,
         "timestamp": "2023-01-01T00:00:00Z",
-        "model_used": "placeholder_v0"
+        "model_used": "LightGBM_tuned_real_dataset"
     }
     
-    response = client.post("/predict", json=request.dict())
+    response = client.post("/predict", json=request.model_dump(mode="json"))
     assert response.status_code == 200
     data = response.json()
     assert data["prediction"] == "safe_riding"
     assert data["confidence"] == 0.91
-    assert data["model_used"] == "placeholder_v0"
+    assert data["model_used"] == "LightGBM_tuned_real_dataset"
 
 def test_create_prediction_invalid_window_size():
-    """Test POST /predict with fewer than 20 readings."""
+    """Test POST /predict with fewer than 20 dual-IMU time steps."""
     sensor_readings = [
         SensorReading(
             ride_id="test_ride_1",
@@ -74,10 +83,12 @@ def test_create_prediction_invalid_window_size():
         ) for _ in range(10)  # Only 10 readings
     ]
     
-    request = PredictionRequest(
-        ride_id="test_ride_1",
-        sensor_window=sensor_readings
-    )
-    
-    response = client.post("/predict", json=request.dict())
+    payload = {
+        "ride_id": "test_ride_1",
+        "sensor_window": [
+            reading.model_dump(mode="json") for reading in sensor_readings
+        ],
+    }
+
+    response = client.post("/predict", json=payload)
     assert response.status_code == 422

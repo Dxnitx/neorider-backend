@@ -88,7 +88,9 @@ celerybeat-schedule
 
 # Environments
 .env
-.venv
+.env.*
+!.env.example
+.venv/
 env/
 venv/
 ENV/
@@ -129,8 +131,12 @@ dmypy.json
 ehthumbs.db
 Thumbs.db
 
-# Firebase
+# Firebase credentials (keep credential JSON outside version control)
 firebase_key.json
+serviceAccountKey.json
+service-account*.json
+*service-account*.json
+*firebase*credentials*.json
 
 # Logs
 *.log
@@ -143,3 +149,13 @@ firebase_key.json
 # Temporary files
 *.tmp
 *.temp
+
+# Locally captured sensor datasets
+safe_recordings/
+
+# Accidental local shell/pip marker files
+/pip
+/python
+/26.2.1
+/(Set-ExecutionPolicy
+app/ml_models/

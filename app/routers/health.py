@@ -3,7 +3,7 @@ from app.config import get_settings
 
 router = APIRouter()
 
-@router.get("/health")
+@router.get("")
 async def health_check(settings=Depends(get_settings)):
     """Health check endpoint."""
     return {

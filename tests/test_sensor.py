@@ -34,10 +34,10 @@ def test_create_sensor_reading_valid(mock_firebase):
     
     mock_firebase.create_reading.return_value = {
         "id": "test_id",
-        **reading.dict()
+        **reading.model_dump(mode="json")
     }
     
-    response = client.post("/sensor/reading", json=reading.dict())
+    response = client.post("/sensor/reading", json=reading.model_dump(mode="json"))
     assert response.status_code == 201
     data = response.json()
     assert "id" in data

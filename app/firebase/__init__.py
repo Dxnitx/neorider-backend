@@ -26,5 +26,6 @@ def initialize_firebase() -> None:
         firebase_admin.initialize_app(credentials.Certificate(str(credentials_path)))
 
 
-initialize_firebase()
-db = firestore.client()
+def get_firestore_client():
+    initialize_firebase()
+    return firestore.client()
