@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     # Optional
     app_env: str = "development"
     app_version: str = "1.0.0"
+    enable_firestore_writes: bool = False
 
     model_config = {
         "env_file": ".env",
