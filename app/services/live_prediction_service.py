@@ -8,6 +8,7 @@ from typing import Deque, Dict, Tuple
 
 from firebase_admin import firestore
 
+from app.config import get_settings
 from app.models.sensor import SensorReading
 from app.models.prediction import PredictionResponse
 from app.models.live_prediction import LivePredictionResponse
@@ -51,9 +52,14 @@ class LivePredictionService:
     _final_states: Dict[str, str] = {}
     _lock = Lock()
 
-    def __init__(self, db: firestore.Client):
+    def __init__(self, db: firestore.Client, enable_firestore_writes: bool | None = None):
         self.db = db
-        self.sensor_service = SensorService(db)
+        self.enable_firestore_writes = (
+            get_settings().enable_firestore_writes
+            if enable_firestore_writes is None
+            else enable_firestore_writes
+        )
+        self.sensor_service = SensorService(db, self.enable_firestore_writes)
 
     def process_reading(self, reading: SensorReading, defer_persistence=None) -> LivePredictionResponse:
         """Save one reading and predict once both devices have a full window."""
@@ -406,12 +412,20 @@ class LivePredictionService:
             cls._final_states[ride_id] = final_state
             return final_state, accident_streak, previous_state
 
-    @staticmethod
-    def _persist(operation, callback, *args, defer_persistence=None) -> None:
+    def _persist(self, operation, callback, *args, defer_persistence=None) -> None:
+        if not self.enable_firestore_writes:
+            logger.info("[FIRESTORE] writes disabled")
+            return
+
         def measured_callback():
             started = time.perf_counter()
             try:
                 callback(*args)
+            except Exception as exc:
+                # Persistence is best-effort for live processing. In particular,
+                # Firestore may spend its retry budget before raising a quota or
+                # deadline error; this callback must never propagate that failure.
+                logger.warning("[FIRESTORE][WARN] persistence failed: %s", exc)
             finally:
                 logger.info(
                     "[NeoRider LATENCY] db_operation=%s db=%.2fms",

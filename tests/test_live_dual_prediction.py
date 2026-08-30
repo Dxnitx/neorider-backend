@@ -134,3 +134,28 @@ def test_synchronized_low_motion_does_not_pass_impact_gate():
     assert helmet_metrics["max_gyro"] < 3.5
     assert LivePredictionService._is_stationary(helmet_metrics)
     assert LivePredictionService._is_stationary(chest_metrics)
+
+
+def test_firestore_writes_are_skipped_when_disabled():
+    db = MagicMock()
+    service = LivePredictionService(db, enable_firestore_writes=False)
+    reading = _reading("helmet", 0)
+
+    response = service.process_reading(reading)
+
+    assert response.status == "collecting"
+    db.collection.assert_not_called()
+
+
+def test_firestore_failure_does_not_fail_live_processing():
+    db = MagicMock()
+    service = LivePredictionService(db, enable_firestore_writes=True)
+    db.collection.return_value.document.return_value.set.side_effect = RuntimeError(
+        "quota exhausted"
+    )
+    reading = _reading("helmet", 0).model_copy(update={"ride_id": "quota-test"})
+    service.clear_buffer("quota-test")
+
+    response = service.process_reading(reading)
+
+    assert response.status == "collecting"
